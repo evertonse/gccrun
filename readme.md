@@ -1,3 +1,5 @@
 # How to Use
-$ gccrun project.toml 
+
+``$ gccrun project.toml ``
+
 look examples
