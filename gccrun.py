@@ -5,6 +5,7 @@ import subprocess
 import tomllib as toml
 import pathlib
 from collections import defaultdict
+import shutil
 
 
 from utils.log import debug,set_project,RED,BLUE,GREEN,HEADER
@@ -119,7 +120,7 @@ def __main__():
 
 	default_project_path = 'CyberXEngine.toml'
 	project_path = sys.argv[1] if len(sys.argv) > 1 else default_project_path
-	
+
 	with open(project_path, "rb") as f:
 		data	 	= defaultdict(lambda:"",toml.load(f))
 		project = Project(data)
@@ -127,12 +128,15 @@ def __main__():
 	config = {
 		"compiler" : project.compiler if project is not None else 'g++', 
 	}
-
+	
+	compiler_full_path = shutil.which(config['compiler'])
+	
 	cmd = create_cmd(
 		compiler=config['compiler'],
 		project =project
 	)
 	
+	debug(f"INFO: Compiling using {BLUE(compiler_full_path)}\n")
 	debug(f"INFO: Building project from file : {BLUE(project_path)}\n")
 	debug(f"INFO: Command Generated: {cmd}\n")
 	debug(f"INFO: Running project from file : {BLUE(project_path)}\n")
