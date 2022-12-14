@@ -1,9 +1,15 @@
+import sys
 from dataclasses import dataclass
 import os
 import subprocess
 import tomllib as toml
 import pathlib
 from collections import defaultdict
+
+
+from utils.color import bcolors
+from utils.log import debug
+
   
 
 
@@ -67,35 +73,8 @@ class Project():
 # os.chdir('./..') #chdir used for change direcotry
 # print("Current_dir",cdir)
 
-import sys
 
-__filename__,_ =  __file__[__file__.rindex('\\')+1:].rsplit('.',1)
 
-class bcolors:
-	HEADER 	 = '\033[95m'
-	OKBLUE 	 = '\033[94m'
-	OKCYAN 	 = '\033[96m'
-	OKGREEN  = '\033[92m'
-	WARNING  = '\033[93m'
-	FAIL 	 = '\033[91m'
-	ENDC 	 = '\033[0m'
-	BOLD 	 = '\033[1m'
-	UNDERLINE= '\033[4m'
-
-def RED(msg:str) -> str:
-	return f"{bcolors.FAIL}{msg}{bcolors.ENDC}"
-
-def GREEN(msg:str) -> str:
-	return f"{bcolors.OKGREEN}{msg}{bcolors.ENDC}"
-
-def BLUE(msg:str) -> str:
-	return f"{bcolors.OKCYAN}{msg}{bcolors.ENDC}"
-
-def HEADER(msg:str) -> str:
-	return f"{bcolors.HEADER}{msg}{bcolors.ENDC}"
-
-def debug(*args,**kwargs):
-	print(f'[{HEADER(__filename__)}]',*args,**kwargs)
 
 
 def create_cmd(
@@ -152,17 +131,17 @@ def __main__():
 		project =project
 	)
 	
-	debug(f"INFO: Building project from file : {BLUE(project_path)}\n")
+	debug(f"INFO: Building project from file : {bcolors.BLUE(project_path)}\n")
 	debug(f"INFO: Command Generated: {cmd}\n")
-	debug(f"INFO: Running project from file : {BLUE(project_path)}\n")
+	debug(f"INFO: Running project from file : {bcolors.BLUE(project_path)}\n")
 	
 	code = subprocess.run(cmd)
 	
 	if code.returncode == 0:
-		debug(f'INFO: {GREEN("Compilation Succeded")} return code was zero, usually means success')
+		debug(f'INFO: {bcolors.GREEN("Compilation Succeded")} return code was zero, usually means success')
 		subprocess.run(project.executable_path())
 	else:
-		debug(f'ERROR: {RED("Compilation Failed")} return code was {RED("non-zero")}, usually means bad things')
+		debug(f'ERROR: {bcolors.RED("Compilation Failed")} return code was {bcolors.RED("non-zero")}, usually means bad things')
 
 if __name__ == '__main__':
 	__main__()
