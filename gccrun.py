@@ -116,7 +116,6 @@ def create_cmd(
 	return cmd
 
 def __main__():
-	set_project(name=__filename__) # setting up dependencies
 
 	default_project_path = 'CyberXEngine.toml'
 	project_path = sys.argv[1] if len(sys.argv) > 1 else default_project_path

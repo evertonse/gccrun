@@ -1,3 +1,4 @@
+from os.path import basename,splitext
 class bcolors:
 	HEADER 	 = '\033[95m'
 	OKBLUE 	 = '\033[94m'
@@ -8,6 +9,10 @@ class bcolors:
 	ENDC 	 = '\033[0m'
 	BOLD 	 = '\033[1m'
 	UNDERLINE= '\033[4m'
+
+import inspect
+
+THIS_PACKAGE_NAME:str =  "DEFAULT"
 
 def RED(msg:str) -> str:
 	return f"{bcolors.FAIL}{msg}{bcolors.ENDC}"
@@ -21,10 +26,10 @@ def BLUE(msg:str) -> str:
 def HEADER(msg:str) -> str:
 	return f"{bcolors.HEADER}{msg}{bcolors.ENDC}"
 
-PROJECT_NAME:str =  "DEFAULT"
 
 def set_project(name):
 	PROJECT_NAME = name
 
 def debug(*args,**kwargs):
-	print(f'[{HEADER(PROJECT_NAME)}]',*args,**kwargs)
+	filename = splitext(basename(inspect.stack()[1].filename))[0] 
+	print(f'[{HEADER(filename)}]',*args,**kwargs)
