@@ -1,7 +1,7 @@
 import sys
 import subprocess as sp
-from utils.color import RED,GREEN, BLUE
-from utils.log import debug 
+from utils.log import debug ,RED,BLUE,HEADER
+
 import pkg_resources
 
 PACKAGES_REQUIRED:list[str] = ['pathlib','tomllib']
