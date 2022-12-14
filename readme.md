@@ -1,1 +1,5 @@
-"#run \n $ gccrun project.toml \nlook examples" 
+# How to Use
+
+``$ gccrun project.toml ``
+
+look examples
