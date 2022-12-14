@@ -8,10 +8,12 @@ from collections import defaultdict
 
 
 from utils.color import bcolors
-from utils.log import debug
+from utils.log import debug,set_project
+from utils.package_test import package_setup
 
-  
 
+
+__filename__,_ =  __file__[__file__.rindex('\\')+1:].rsplit('.',1)
 
 #>>========================================================================================================
 #>>=============================================CONFIG PROEJCT=============================================
@@ -115,6 +117,8 @@ def create_cmd(
 	return cmd
 
 def __main__():
+	set_project(name=__filename__) # setting up dependencies
+
 	default_project_path = 'CyberXEngine.toml'
 	project_path = sys.argv[1] if len(sys.argv) > 1 else default_project_path
 	

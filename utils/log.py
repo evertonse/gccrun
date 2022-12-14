@@ -1,8 +1,11 @@
-from color import bcolors
+from utils.color import HEADER
 import sys;
 
 
-__filename__,_ =  __file__[__file__.rindex('\\')+1:].rsplit('.',1)
+PROJECT_NAME:str =  "DEFAULT"
+
+def set_project(name):
+	PROJECT_NAME = name
 
 def debug(*args,**kwargs):
-	print(f'[{bcolors.HEADER(__filename__)}]',*args,**kwargs)
+	print(f'[{HEADER(PROJECT_NAME)}]',*args,**kwargs)

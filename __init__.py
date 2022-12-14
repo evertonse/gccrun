@@ -1,2 +1,2 @@
-from setup import setup
+from utils.package_test import setup
 setup()
