@@ -7,8 +7,7 @@ import pathlib
 from collections import defaultdict
 
 
-from utils.color import bcolors
-from utils.log import debug,set_project
+from utils.log import debug,set_project,RED,BLUE,GREEN,HEADER
 from utils.package_test import package_setup
 
 
@@ -135,17 +134,17 @@ def __main__():
 		project =project
 	)
 	
-	debug(f"INFO: Building project from file : {bcolors.BLUE(project_path)}\n")
+	debug(f"INFO: Building project from file : {BLUE(project_path)}\n")
 	debug(f"INFO: Command Generated: {cmd}\n")
-	debug(f"INFO: Running project from file : {bcolors.BLUE(project_path)}\n")
+	debug(f"INFO: Running project from file : {BLUE(project_path)}\n")
 	
 	code = subprocess.run(cmd)
 	
 	if code.returncode == 0:
-		debug(f'INFO: {bcolors.GREEN("Compilation Succeded")} return code was zero, usually means success')
+		debug(f'INFO: {GREEN("Compilation Succeded")} return code was zero, usually means success')
 		subprocess.run(project.executable_path())
 	else:
-		debug(f'ERROR: {bcolors.RED("Compilation Failed")} return code was {bcolors.RED("non-zero")}, usually means bad things')
+		debug(f'ERROR: {RED("Compilation Failed")} return code was {RED("non-zero")}, usually means bad things')
 
 if __name__ == '__main__':
 	__main__()
