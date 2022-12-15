@@ -84,7 +84,7 @@ def create_cmd(
 	project:Project) -> str:
 	
 	version  :str  = project.version.lower() if project.version else ""
-	optimized :bool = True if project.optimize == "on" else False
+	optimized :bool = True if any([str(project.optimize).lower() == i for i in ["on", 'true']]) else False
 
 	version_flag  :str  = f'-std={version}' if version != "" else ""
 	
@@ -110,7 +110,7 @@ def create_cmd(
 		cmd += f' -l{file} '
 		
 	
-	cmd += (" -O3 " if optimized else "-O0 ")
+	cmd += (" -O3 -DNDEBUG " if optimized else "-O0 ")
 	
 	cmd += f'-o{project.executable_path()}'
 
