@@ -1,5 +1,6 @@
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 import os
 import subprocess
 import tomllib as toml
@@ -10,9 +11,9 @@ from collections import defaultdict
 from utils.color import bcolors
 from utils.log import debug,set_project
 from utils.package_test import package_setup
+from utils.file import content_of
 
-
-
+__dir_path__ = os.path.dirname(os.path.realpath(__file__))
 __filename__,_ =  __file__[__file__.rindex('\\')+1:].rsplit('.',1)
 
 #>>========================================================================================================
@@ -109,18 +110,37 @@ def create_cmd(
 	for file in project.libfiles:
 		cmd += f' -l{file} '
 		
-	
 	cmd += (" -O3 " if optimized else "-O0 ")
-	
 	cmd += f'-o{project.executable_path()}'
 
 	return cmd
 
+def create_empty_build(path):
+	build_default_name = "build.toml"
+	
+	filepath = Path(path,build_default_name)
+	default_filepath:str = __dir_path__ + 'assets/default.toml'
+	
+	if not os.path.exists(filepath):
+		debug(f"INFO: about to read default build from {default_filepath} was added as the build file\n")
+		with open(filepath, 'w') as f:
+			f.write(content_of(default_filepath))
+			debug(f"INFO: {build_default_name} was added as the build file\n")
+	else: 
+		debug(f"INFO: {build_default_name} already exists, nothing was done.\n")
+
+def process_commands():
+	if len(sys.argv) > 1:
+		if sys.argv[1] == 'init':
+			create_empty_build('')
+			exit(1)
+		
 def __main__():
 	set_project(name=__filename__) # setting up dependencies
 
 	default_project_path = 'CyberXEngine.toml'
 	project_path = sys.argv[1] if len(sys.argv) > 1 else default_project_path
+	process_commands()
 	
 	with open(project_path, "rb") as f:
 		data	 	= defaultdict(lambda:"",toml.load(f))
