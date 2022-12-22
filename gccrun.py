@@ -1,10 +1,10 @@
 import sys
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path,PurePath
 import os
 import subprocess
 import tomllib as toml
-import pathlib
+import argparse as argp
 from collections import defaultdict
 
 
@@ -12,6 +12,8 @@ from utils.color import bcolors
 from utils.log import debug,set_project
 from utils.package_test import package_setup
 from utils.file import content_of
+from utils import gcc
+from utils import msvc
 
 __dir_path__ = os.path.dirname(os.path.realpath(__file__))
 __filename__,_ =  __file__[__file__.rindex('\\')+1:].rsplit('.',1)
@@ -50,7 +52,7 @@ class Project():
 
 	def __init__(self,toml_dict) -> None:
 		self.__dict__ = toml_dict
-		self.binpath = pathlib.Path(pathlib.PurePath('./'+ toml_dict['binpath']))
+		self.binpath = Path(PurePath('./'+ toml_dict['binpath']))
 		self.binpath.mkdir(parents=True,exist_ok=True)
 		self.add_src_files()
 
@@ -67,7 +69,7 @@ class Project():
 				self.srcfiles.remove(srcfile)
 
 	def executable_path(self):
-		return str(pathlib.PurePath(self.binpath,self.name))
+		return str(PurePath(self.binpath,self.name))
 
 # cdir = os.getcwd() # it will return current working directory
 # print("Previous_dir",cdir)
@@ -77,52 +79,25 @@ class Project():
 # print("Current_dir",cdir)
 
 
-
-
-
 def create_cmd(
 	compiler:str,
 	project:Project) -> str:
-	
-	version  :str  = project.version.lower() if project.version else ""
-	optimized :bool = True if project.optimize == "on" else False
-
-	version_flag  :str  = f'-std={version}' if version != "" else ""
-	
-	cmd = f'{compiler} {version_flag}'
-
-	for file in project.srcfiles:
-		cmd += f' ./{file} '
-		
-
-	for folder in project.includedirs:
-		cmd += f' -I{folder} '
-
-	for folder in project.libdirs:
-		cmd += f' -L{folder} '
-
-	for warning in project.warnings:
-		cmd += f' -W{warning} '
-	
-	for define in project.defines:
-		cmd += f' -D{define} '
-
-	for file in project.libfiles:
-		cmd += f' -l{file} '
-		
-	cmd += (" -O3 " if optimized else "-O0 ")
-	cmd += f'-o{project.executable_path()}'
-
-	return cmd
+	if compiler.lower() in {'msvc', 'cl'}:
+		debug(f"INFO: detected msvc build\n")
+		return msvc.create_cmd('cl',project)
+	else:
+		debug(f"INFO: detected gcc build\n")
+		return gcc.create_cmd('g++',project)
 
 def create_empty_build(path):
 	build_default_name = "build.toml"
 	
 	filepath = Path(path,build_default_name)
-	default_filepath:str = __dir_path__ + 'assets/default.toml'
+	debug(f"INFO: about to create default build file {filepath}")
+	default_filepath:str = Path(__dir_path__+'/assets/default.toml')
 	
 	if not os.path.exists(filepath):
-		debug(f"INFO: about to read default build from {default_filepath} was added as the build file\n")
+		debug(f"INFO: about to read default build from {default_filepath}\n")
 		with open(filepath, 'w') as f:
 			f.write(content_of(default_filepath))
 			debug(f"INFO: {build_default_name} was added as the build file\n")
@@ -131,10 +106,10 @@ def create_empty_build(path):
 
 def process_commands():
 	if len(sys.argv) > 1:
-		if sys.argv[1] == 'init':
+		if sys.argv[1].lower() in {'init','start'} :
 			create_empty_build('')
-			exit(1)
-		
+			exit(0)
+
 def __main__():
 	set_project(name=__filename__) # setting up dependencies
 
@@ -149,7 +124,6 @@ def __main__():
 	config = {
 		"compiler" : project.compiler if project is not None else 'g++', 
 	}
-
 	cmd = create_cmd(
 		compiler=config['compiler'],
 		project =project
