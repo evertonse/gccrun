@@ -3,14 +3,17 @@ from dataclasses import dataclass
 import os
 import subprocess
 import tomllib as toml
-import pathlib
+from pathlib import Path ,PurePath
 from collections import defaultdict
 import shutil
+import time
+from multiprocessing import cpu_count
+
+start = time.time()
 
 
 from utils.log import debug,set_project,RED,BLUE,GREEN,HEADER
 from utils.package_test import package_setup
-
 
 
 __filename__,_ =  __file__[__file__.rindex('\\')+1:].rsplit('.',1)
@@ -44,12 +47,15 @@ class Project():
 	libfiles 		:list[str]
 	#-W
 	warnings 		:list[str]
+	
+	# Git Submodules
+	submodules 		:list[str]
 #<<=========================================================================================================
 #<<=========================================================================================================
 
 	def __init__(self,toml_dict) -> None:
 		self.__dict__ = toml_dict
-		self.binpath = pathlib.Path(pathlib.PurePath('./'+ toml_dict['binpath']))
+		self.binpath = Path(PurePath('./'+ toml_dict['binpath']))
 		self.binpath.mkdir(parents=True,exist_ok=True)
 		self.add_src_files()
 
@@ -66,7 +72,7 @@ class Project():
 				self.srcfiles.remove(srcfile)
 
 	def executable_path(self):
-		return str(pathlib.PurePath(self.binpath,self.name))
+		return str(PurePath(self.binpath,self.name))
 
 # cdir = os.getcwd() # it will return current working directory
 # print("Previous_dir",cdir)
@@ -75,62 +81,125 @@ class Project():
 # os.chdir('./..') #chdir used for change direcotry
 # print("Current_dir",cdir)
 
-
-
-
-
 def create_cmd(
 	compiler:str,
 	project:Project) -> str:
 	
+	if compiler.lower() in ['msvc','cl']:
+		return create_cmd_msvc(compiler, project)
+	else:
+		return create_cmd_gcc(compiler, project)
+
+def create_cmd_gcc(
+	compiler:str,
+	project:Project) -> str:
+	
+	flag_separator:str = '/' if compiler.lower() == "cl" else '-' 
+	
 	version  :str  = project.version.lower() if project.version else ""
 	optimized :bool = True if any([str(project.optimize).lower() == i for i in ["on", 'true']]) else False
 
-	version_flag  :str  = f'-std={version}' if version != "" else ""
+	version_flag  :str  = f'{flag_separator}std={version}' if version != "" else ""
 	
 	cmd = f'{compiler} {version_flag}'
+
 
 	for file in project.srcfiles:
 		cmd += f' ./{file} '
 		
-
 	for folder in project.includedirs:
-		cmd += f' -I{folder} '
+		cmd += f' {flag_separator}I{folder} '
 
 	for folder in project.libdirs:
-		cmd += f' -L{folder} '
+		cmd += f' {flag_separator}L{folder} '
 
 	for warning in project.warnings:
-		cmd += f' -W{warning} '
-	
+		cmd += f' {flag_separator}W{warning} '
+
 	for define in project.defines:
-		cmd += f' -D{define} '
+		cmd += f' {flag_separator}D{define} '
 
 	for file in project.libfiles:
-		cmd += f' -l{file} '
-		
+		cmd += f' {flag_separator}l{file} '
 	
-	cmd += (" -O3 -DNDEBUG " if optimized else "-O0 ")
-	
-	cmd += f'-o{project.executable_path()}'
+	cmd += (f"{flag_separator}O2 {flag_separator}DNDEBUG " if optimized else f"{flag_separator}O0 ")
+	cmd += f'{flag_separator}o{project.executable_path()}'
 
 	return cmd
+
+
+def create_cmd_msvc(
+	compiler:str,
+	project:Project) -> str:
+	
+	flag_separator:str = '/' if compiler.lower() == "cl" else '-' 
+	
+	version  :str  = project.version.lower() if project.version else ""
+	optimized :bool = True if any([str(project.optimize).lower() == i for i in ["on", 'true']]) else False
+
+	version_flag  :str  = f'{flag_separator}std:{version}' if version != "" else ""
+	
+	cmd = f'{compiler} {version_flag}'
+
+	if not optimized:
+		cmd += f' {flag_separator}Zi '
+		cmd += f' {flag_separator}cgthreads {int(cpu_count()/2)}'
+		
+	cmd += (f" {flag_separator}O3 {flag_separator}DNDEBUG " if optimized else f"{flag_separator}Od ")
+	cmd += f' {flag_separator}Fe: {project.executable_path()}'
+	cmd += f' {flag_separator}Fo: {project.executable_path()}'
+
+	for folder in project.includedirs:
+		cmd += f' {flag_separator}I{folder} '
+
+	
+	for define in project.defines:
+		cmd += f' {flag_separator}D{define} '
+
+	for file in project.srcfiles:
+		cmd += f' ./{file} '
+		
+	for file in project.libfiles:
+		cmd += f' ./{file}.lib '
+
+	for warning in project.warnings:
+		cmd += f' {flag_separator}W{warning} '
+	
+	for folder in project.libdirs:
+		cmd += f'{flag_separator}link {flag_separator}LIBPATH:{folder} '	
+	
+
+	return cmd
+
+def add_submodules(P: Project):
+	cmd_submodule:str = "git add "
+	#code = subprocess.run(cmd)
+	if code.returncode == 0:
+		debug(f'INFO: {GREEN("Compilation Succeded")} return code was zero, usually means success')
 
 def __main__():
 
 	default_project_path = 'CyberXEngine.toml'
 	project_path = sys.argv[1] if len(sys.argv) > 1 else default_project_path
+	submodules = sys.argv[2] if len(sys.argv) > 2 else None
+
+
 
 	with open(project_path, "rb") as f:
 		data	 	= defaultdict(lambda:"",toml.load(f))
 		project = Project(data)
 	
+	if project.compiler == 'MSVC':
+		project.compiler = 'cl'
 	config = {
 		"compiler" : project.compiler if project is not None else 'g++', 
 	}
 	
 	compiler_full_path = shutil.which(config['compiler'])
 	
+	if submodules == '--submodules' or submodules == '-s':
+		add_submodules(P=project)
+
 	cmd = create_cmd(
 		compiler=config['compiler'],
 		project =project
@@ -140,12 +209,17 @@ def __main__():
 	debug(f"INFO: Building project from file : {BLUE(project_path)}\n")
 	debug(f"INFO: Command Generated: {cmd}\n")
 	debug(f"INFO: Running project from file : {BLUE(project_path)}\n")
-	
+	start = time.time()
 	code = subprocess.run(cmd)
-	
+	end = time.time()
+
 	if code.returncode == 0:
 		debug(f'INFO: {GREEN("Compilation Succeded")} return code was zero, usually means success')
+		debug(f'INFO:  took {end - start} to compile')
+		start = time.time()
 		subprocess.run(project.executable_path())
+		end = time.time()
+		debug(f'INFO:  took {end - start} to run')
 	else:
 		debug(f'ERROR: {RED("Compilation Failed")} return code was {RED("non-zero")}, usually means bad things')
 
