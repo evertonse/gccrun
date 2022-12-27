@@ -9,8 +9,8 @@ from collections import defaultdict
 
 
 from utils.color import bcolors
-from utils.log import debug,set_project
-from utils.package_test import package_setup
+from utils.log import debug, set_project
+#from utils.package_test import package_setup
 from utils.file import content_of
 from utils import gcc
 from utils import msvc
@@ -115,8 +115,10 @@ def __main__():
 
 	default_project_path = 'CyberXEngine.toml'
 	project_path = sys.argv[1] if len(sys.argv) > 1 else default_project_path
-	process_commands()
 	
+	debug(f"INFO: about to process args")
+	process_commands()
+
 	with open(project_path, "rb") as f:
 		data	 	= defaultdict(lambda:"",toml.load(f))
 		project = Project(data)

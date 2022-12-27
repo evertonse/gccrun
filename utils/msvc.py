@@ -9,7 +9,7 @@ def create_cmd(
 
 	
 	version_flag  :str  = f'-std={version}' if version != "" else ""
-	common_flags = " -".join(['MT','nologo'])
+	common_flags = " -".join(['MTd','nologo'])
 
 	cmd += (" -O2 " if optimized else "-O0 -Zi")
 
